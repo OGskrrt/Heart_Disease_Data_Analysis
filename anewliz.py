@@ -111,3 +111,87 @@ replace_with_thresholds(df, "resting bp s")
 for col in cols:
     print(col, check_outlier(df, col))
 
+    mean_values = df.mean()
+    median_values = df.median()
+    mode_values = df.mode().iloc[0]
+    std_values = df.std()
+
+    for column in df.select_dtypes(include=['float64', 'int64']).columns:
+        plt.figure(figsize=(10, 4))
+        sns.histplot(df[column], kde=True, color='blue')
+        plt.axvline(mean_values[column], color='red', linestyle='--', label=f'Mean: {mean_values[column]:.2f}')
+        plt.axvline(median_values[column], color='green', linestyle='-', label=f'Median: {median_values[column]:.2f}')
+        plt.axvline(mode_values[column], color='orange', linestyle='-', label=f'Mode: {mode_values[column]:.2f}')
+        plt.axvline(std_values[column], color='purple', linestyle='-', label=f'Std: {std_values[column]:.2f}')
+        plt.title(f'Distribution of {column}')
+        plt.legend()
+        plt.show()
+
+for column in df.select_dtypes(include=['float64', 'int64']).columns:
+    plt.figure(figsize=(10, 4))
+    sns.scatterplot(x=df.index, y=df[column], alpha=0.5, color='blue')
+
+    plt.title(f'Scatter Plot of {column}')
+    plt.xlabel('Index')
+    plt.ylabel(column)
+    plt.show()
+
+for column in df.select_dtypes(include=['float64', 'int64']).columns:
+    plt.figure(figsize=(10, 6))
+    sns.histplot(df[column], kde=True)
+    plt.title(f'Histogram of {column}')
+    plt.xlabel(column)
+    plt.ylabel('Frequency')
+    plt.show()
+
+for column in df.select_dtypes(include=['float64', 'int64']).columns:
+    plt.figure(figsize=(10, 6))
+    sns.boxplot(x=df[column])
+    plt.title(f'Box Plot of {column}')
+    plt.xlabel(column)
+    plt.show()
+
+corr_matrix = df.corr()
+
+# Visualize correlation matrix
+plt.figure(figsize=(10, 8))
+sns.heatmap(corr_matrix, annot=True, cmap='coolwarm')
+plt.title('Correlation Matrix')
+plt.show()
+
+
+def target_summary_with_num(dataframe, target, numerical_col):
+    print(dataframe.groupby(target).agg({numerical_col: "mean"}), end="\n\n\n")
+
+
+for col in cols:
+    target_summary_with_num(df, "target", col)
+
+
+high_corr_features = corr_matrix['target'][abs(corr_matrix['target']) > 0.4].index.tolist()
+high_corr_features.remove('target')
+print(f"Selected features: {high_corr_features}")
+
+
+from sklearn.preprocessing import RobustScaler
+for col in cols:
+    df[col] = RobustScaler().fit_transform(df[[col]])
+
+
+df2 = df # First, copy the file
+corr_matrix2 = df2.corr() # correlation map
+target_variable = 'target' # our target variable
+
+# calculate variables with correlation greater than 0.4
+high_corr_features = corr_matrix2['target'][abs(corr_matrix2['target']) > 0.4].index.tolist()
+
+# remove target variable itself
+high_corr_features.remove('target')
+
+# check
+print(f"Selected features: {high_corr_features}")
+
+# Filter the dataset to keep only high correlation features.
+df2 = df2[high_corr_features + ['target']]
+
+
